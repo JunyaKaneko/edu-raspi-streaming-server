@@ -34,7 +34,8 @@ CAMERA_LOCK = os.path.join(WORKDIR, 'camera_lock')
 CAMERA_SLEEP = os.path.join(WORKDIR, 'camera_sleep')
 CAMERA_RECORD = os.path.join(WORKDIR, 'camera_record')
 CAMERA_DELETE_RECORDS = os.path.join(WORKDIR, 'camera_delete_records')
-
+CAM_OUT = os.path.join(WORKDIR, 'cam_out.jpg')
+CAM_LOCK = os.path.join(WORKDIR, 'cam_lock')
 
 app = Flask(__name__)
 
@@ -47,6 +48,21 @@ def capture():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + f.read() + b'\r\n\r\n')
         time.sleep(0.5)
+
+
+def get_cam():
+    while True:
+        if os.path.exists(CAM_LOCK):
+            continue
+        with open(CAM_OUT, 'rb') as f:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + f.read() + b'\r\n\r\n')
+        time.sleep(0.5)
+
+
+@app.route('/cam/stream')
+def stream_cam():
+    return Response(get_cam(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route('/video/stream')
